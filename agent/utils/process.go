@@ -2,6 +2,7 @@ package utils
 
 import (
 	"errors"
+	"fmt"
 	"github.com/VerizonMedia/kubectl-flame/agent/details"
 	"github.com/VerizonMedia/kubectl-flame/api"
 	"github.com/fntlnz/mountinfo"
@@ -31,6 +32,10 @@ func getProcessName(job *details.ProfilingJob) string {
 
 func FindProcessId(job *details.ProfilingJob) (string, error) {
 	name := getProcessName(job)
+
+	api.PublishError(errors.New("Process name: " + name))
+	os.Exit(1)
+
 	foundProc := ""
 	proc, err := os.Open("/proc")
 	if err != nil {
@@ -41,6 +46,7 @@ func FindProcessId(job *details.ProfilingJob) (string, error) {
 
 	for {
 		dirs, err := proc.Readdir(15)
+
 		if err == io.EOF {
 			break
 		}
@@ -49,6 +55,9 @@ func FindProcessId(job *details.ProfilingJob) (string, error) {
 		}
 
 		for _, di := range dirs {
+
+			fmt.Println("Dir name: " + di.Name())
+
 			if !di.IsDir() {
 				continue
 			}

@@ -4,9 +4,9 @@ package job
 
 import (
 	"fmt"
-
 	batchv1 "k8s.io/api/batch/v1"
 	apiv1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/uuid"
 
@@ -80,8 +80,18 @@ func (c *jvmCreator) create(targetPod *apiv1.Pod, targetDetails *data.TargetDeta
 							SecurityContext: &apiv1.SecurityContext{
 								Privileged: boolPtr(true),
 							},
+							Resources: *&apiv1.ResourceRequirements{
+								Requests: *&apiv1.ResourceList{
+									apiv1.ResourceCPU: resource.MustParse("200m"),
+									apiv1.ResourceMemory: resource.MustParse("20Mi"),
+								},
+								Limits: *&apiv1.ResourceList{
+									apiv1.ResourceMemory: resource.MustParse("50Mi"),
+								},
+							},
 						},
 					},
+
 					RestartPolicy: "Never",
 					NodeName:      targetPod.Spec.NodeName,
 				},
@@ -101,6 +111,5 @@ func (c *jvmCreator) getAgentImage(targetDetails *data.TargetDetails) string {
 	if targetDetails.Alpine {
 		tag = fmt.Sprintf("%s-alpine", tag)
 	}
-
 	return fmt.Sprintf("%s:%s", baseImageName, tag)
 }
