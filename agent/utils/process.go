@@ -2,7 +2,6 @@ package utils
 
 import (
 	"errors"
-	"fmt"
 	"github.com/VerizonMedia/kubectl-flame/agent/details"
 	"github.com/VerizonMedia/kubectl-flame/api"
 	"github.com/fntlnz/mountinfo"
@@ -34,7 +33,6 @@ func FindProcessId(job *details.ProfilingJob) (string, error) {
 	name := getProcessName(job)
 
 	api.PublishError(errors.New("Process name: " + name))
-	os.Exit(1)
 
 	foundProc := ""
 	proc, err := os.Open("/proc")
@@ -47,6 +45,8 @@ func FindProcessId(job *details.ProfilingJob) (string, error) {
 	for {
 		dirs, err := proc.Readdir(15)
 
+		api.PublishError(errors.New("Process name: " + name))
+
 		if err == io.EOF {
 			break
 		}
@@ -56,7 +56,7 @@ func FindProcessId(job *details.ProfilingJob) (string, error) {
 
 		for _, di := range dirs {
 
-			fmt.Println("Dir name: " + di.Name())
+			api.PublishError(errors.New("Trying dir: " + di.Name()))
 
 			if !di.IsDir() {
 				continue
@@ -64,11 +64,13 @@ func FindProcessId(job *details.ProfilingJob) (string, error) {
 
 			dname := di.Name()
 			if dname[0] < '0' || dname[0] > '9' {
+				api.PublishError(errors.New("Dir name too short/long, skipping:" + di.Name()))
 				continue
 			}
 
 			mi, err := mountinfo.GetMountInfo(path.Join("/proc", dname, "mountinfo"))
 			if err != nil {
+				api.PublishError(errors.New("Can't get mount info for " + di.Name()))
 				continue
 			}
 
@@ -79,6 +81,7 @@ func FindProcessId(job *details.ProfilingJob) (string, error) {
 
 					exeName, err := os.Readlink(path.Join("/proc", dname, "exe"))
 					if err != nil {
+						api.PublishError(errors.New("Can't read proc link for " + m.Root + " and " + dname))
 						continue
 					}
 
